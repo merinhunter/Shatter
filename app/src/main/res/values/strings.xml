@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Shatter</string>
+    <string name="delete">Delete key</string>
+    <string name="select">Select</string>
+    <string name="sessionID">Session ID</string>
 </resources>
