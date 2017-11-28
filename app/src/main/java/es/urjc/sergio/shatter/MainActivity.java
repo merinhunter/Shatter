@@ -4,16 +4,12 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 
-import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.Enumeration;
-
-import es.urjc.sergio.keystore.KeyStoreManager;
 
 public class MainActivity extends AppCompatActivity {
     private KeyStore ks;
@@ -22,19 +18,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.header);
 
         try {
             ks = KeyStore.getInstance("AndroidKeyStore");
             ks.load(null);
+            System.out.println(ks.containsAlias("main"));
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        ListView listView = (ListView) View.inflate(this, R.layout.key_list,null);
-        View listHeader = View.inflate(this, R.layout.header, null);
-        listView.addHeaderView(listHeader);
+        RelativeLayout rl = findViewById(R.id.header);
+        ListView listView = (ListView) View.inflate(this, R.layout.key_list, null);
+        rl.addView(listView);
 
-        setContentView(listView);
+        //ListView listView = findViewById(R.id.keyList);
+        //View listHeader = View.inflate(this, R.layout.header, null);
+        //listView.addHeaderView(listHeader);
     }
 
     private void refreshKeys() {
