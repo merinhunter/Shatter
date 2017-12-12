@@ -43,11 +43,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void fillList() {
         refreshKeys();
-        LinearLayout layout = (LinearLayout) findViewById(R.id.keyList);
+        LinearLayout listLayout = findViewById(R.id.keyList);
 
         for(String alias : keyAliases) {
+            System.out.println("Alias found: " + alias);
+            getLayoutInflater().inflate(R.layout.card, listLayout);
             // TODO: Fill card data for each alias
-            layout.addView(null);
         }
     }
 }
