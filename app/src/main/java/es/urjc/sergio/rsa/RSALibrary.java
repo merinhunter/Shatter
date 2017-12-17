@@ -22,6 +22,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 //import javax.xml.bind.DatatypeConverter;
@@ -31,7 +32,7 @@ public class RSALibrary {
     public final static String ALGORITHM = "RSA";
 
     // String to hold the name of the security provider.
-    public final static String PROVIDER = "SC";
+    public final static String PROVIDER = "BC";
 
     // String to hold the name of the RSA keys path.
     public final static String keysPath = "";
@@ -91,13 +92,13 @@ public class RSALibrary {
         //byte[] keyBytes = DatatypeConverter.parseBase64Binary(base64encoded);
         byte[] keyBytes = Hex.decode(base64encoded.toString());
 
+        KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM, PROVIDER);
+
         if (isPublic) {
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(keyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM, PROVIDER);
             key = keyFactory.generatePublic(keySpec);
         } else {
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(keyBytes);
-            KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM, PROVIDER);
             key = keyFactory.generatePrivate(keySpec);
         }
 
@@ -128,21 +129,34 @@ public class RSALibrary {
         o.close();
     }
 
-    public void generateKeys() throws IOException {
+    public KeyPair generateKeys() throws IOException {
         try {
+            System.out.println("Generating keys 1");
             final KeyPairGenerator keyGen = KeyPairGenerator.getInstance(ALGORITHM, PROVIDER);
+            System.out.println("Generating keys 2");
             keyGen.initialize(KEY_SIZE, random);
+            System.out.println("Generating keys 3");
             KeyPair keyPair = keyGen.generateKeyPair();
+            System.out.println("Keys generated");
 
-            PrivateKey privateKey = keyPair.getPrivate();
+            System.out.println("PRIVATE 1: " + Arrays.toString(Hex.encode(keyPair.getPrivate().getEncoded())));
+            System.out.println("PUBLIC 1: " + Arrays.toString(Hex.encode(keyPair.getPublic().getEncoded())));
+
+            return keyPair;
+
+            /*PrivateKey privateKey = keyPair.getPrivate();
             PublicKey publicKey = keyPair.getPublic();
 
+            System.out.println("Saving keys");
             saveKey(publicKey, PUBLIC_KEY_FILE);
             saveKey(privateKey, PRIVATE_KEY_FILE);
+            System.out.println("Keys saved");*/
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             System.err.println("Exception: " + e.getMessage());
             System.exit(-1);
         }
+
+        return null;
     }
 
     public static Key generatePublicKey(BigInteger N, BigInteger E) throws Exception {
