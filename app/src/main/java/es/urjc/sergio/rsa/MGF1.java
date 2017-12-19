@@ -1,18 +1,19 @@
 package es.urjc.sergio.rsa;
 
-import java.security.MessageDigest;
 import org.spongycastle.pqc.math.linearalgebra.BigEndianConversions;
+
+import java.security.MessageDigest;
 
 import es.urjc.sergio.common.Bytes;
 
-public class MGF1 {
+class MGF1 {
     private final MessageDigest digest;
 
-    public MGF1(MessageDigest digest) {
+    MGF1(MessageDigest digest) {
         this.digest = digest;
     }
 
-    public byte[] generateMask(byte[] mgfSeed, int maskLen) {
+    byte[] generateMask(byte[] mgfSeed, int maskLen) {
         int hashCount = (int) Math.ceil((float) maskLen / this.digest.getDigestLength());
 
         byte[] mask = new byte[0];

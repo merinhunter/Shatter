@@ -4,7 +4,7 @@ import java.math.BigInteger;
 
 public class Bytes {
 
-    public static final byte[] xor(byte[] a, byte[] b) {
+    public static byte[] xor(byte[] a, byte[] b) {
         if (a.length != b.length) {
             throw new InternalError("Byte a must equal Byte b");
         }
@@ -18,7 +18,7 @@ public class Bytes {
         return output;
     }
 
-    public static final byte[] concat(byte[] a, byte[] b) {
+    public static byte[] concat(byte[] a, byte[] b) {
         byte[] output = new byte[a.length + b.length];
 
         System.arraycopy(a, 0, output, 0, a.length);
@@ -26,11 +26,11 @@ public class Bytes {
         return output;
     }
 
-    public static final byte[] concat(byte[] a, byte[] b, byte[] c) {
+    public static byte[] concat(byte[] a, byte[] b, byte[] c) {
         return concat(a, concat(b, c));
     }
 
-    public static final byte[] I2OSP(BigInteger x, int xLen) {
+    public static byte[] I2OSP(BigInteger x, int xLen) {
         if (x.signum() != 1)
             throw new IllegalArgumentException("BigInteger not positive.");
 

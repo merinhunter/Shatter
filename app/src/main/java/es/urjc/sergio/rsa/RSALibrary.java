@@ -3,39 +3,30 @@ package es.urjc.sergio.rsa;
 import org.spongycastle.util.encoders.Hex;
 
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
 
 import javax.crypto.Cipher;
-//import javax.xml.bind.DatatypeConverter;
 
 public class RSALibrary {
     // String to hold the name of the encryption algorithm.
-    public final static String ALGORITHM = "RSA";
+    private final static String ALGORITHM = "RSA";
 
     // String to hold the name of the security provider.
-    public final static String PROVIDER = "BC";
+    private final static String PROVIDER = "BC";
 
     // String to hold the name of the RSA keys path.
-    public final static String keysPath = "";
+    private final static String keysPath = "keys/";
 
     // String to hold the name of the private key file.
     public final static String PRIVATE_KEY_FILE = keysPath + "private.key";
@@ -43,14 +34,14 @@ public class RSALibrary {
     // String to hold name of the public key file.
     public final static String PUBLIC_KEY_FILE = keysPath + "public.key";
 
-    public final static int KEY_SIZE = 4096;
+    //public final static int KEY_SIZE = 4096;
 
     private final static int LINE_LENGTH = 64;
 
-    private SecureRandom random;
+    //private SecureRandom random;
 
     public RSALibrary() {
-        random = new SecureRandom();
+        //random = new SecureRandom();
     }
 
     public static Key getKey(String path) throws Exception {
@@ -89,7 +80,6 @@ public class RSALibrary {
             throw new Exception("Key file has wrong footer: " + path);
         }
 
-        //byte[] keyBytes = DatatypeConverter.parseBase64Binary(base64encoded);
         byte[] keyBytes = Hex.decode(base64encoded.toString());
 
         KeyFactory keyFactory = KeyFactory.getInstance(ALGORITHM, PROVIDER);
@@ -105,9 +95,8 @@ public class RSALibrary {
         return key;
     }
 
-    private static void saveKey(Key key, String path) throws IOException {
+    /*private static void saveKey(Key key, String path) throws IOException {
         byte[] encoded = key.getEncoded();
-        //String base64encoded = new String(DatatypeConverter.printBase64Binary(encoded));
         String base64encoded = Hex.toHexString(encoded);
         StringBuilder keyString = new StringBuilder();
 
@@ -127,9 +116,9 @@ public class RSALibrary {
         o.write(keyString.toString().getBytes());
         o.flush();
         o.close();
-    }
+    }*/
 
-    public KeyPair generateKeys() throws IOException {
+    /*public KeyPair generateKeys() throws IOException {
         try {
             System.out.println("Generating keys 1");
             final KeyPairGenerator keyGen = KeyPairGenerator.getInstance(ALGORITHM, PROVIDER);
@@ -150,16 +139,16 @@ public class RSALibrary {
             System.out.println("Saving keys");
             saveKey(publicKey, PUBLIC_KEY_FILE);
             saveKey(privateKey, PRIVATE_KEY_FILE);
-            System.out.println("Keys saved");*/
+            System.out.println("Keys saved");
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             System.err.println("Exception: " + e.getMessage());
             System.exit(-1);
         }
 
         return null;
-    }
+    }*/
 
-    public static Key generatePublicKey(BigInteger N, BigInteger E) throws Exception {
+    static Key generatePublicKey(BigInteger N, BigInteger E) throws Exception {
         Key key;
 
         RSAPublicKeySpec keySpec = new RSAPublicKeySpec(N, E);
@@ -169,7 +158,7 @@ public class RSALibrary {
         return key;
     }
 
-    public static Key generatePrivateKey(BigInteger N, BigInteger E) throws Exception {
+    static Key generatePrivateKey(BigInteger N, BigInteger E) throws Exception {
         Key key;
 
         RSAPrivateKeySpec keySpec = new RSAPrivateKeySpec(N, E);
@@ -188,7 +177,7 @@ public class RSALibrary {
 
             cipherText = cipher.doFinal(plainText);
         } catch (Exception e) {
-            System.err.println("Failed to encrypt: " + e.getMessage());
+            System.err.println("Error encrypting RSA: " + e.getMessage());
             return null;
         }
 
@@ -204,7 +193,7 @@ public class RSALibrary {
 
             plainText = cipher.doFinal(cipherText);
         } catch (Exception e) {
-            System.err.println("Failed to encrypt: " + e.getMessage());
+            System.err.println("Error decrypting RSA: " + e.getMessage());
             return null;
         }
 
