@@ -10,6 +10,7 @@ import es.urjc.sergio.cipher.EncFile;
 import es.urjc.sergio.cipher.EncKeyFile;
 import es.urjc.sergio.cipher.Encryptor;
 import es.urjc.sergio.cipher.KeyFile;
+import es.urjc.sergio.common.ExternalStorage;
 import es.urjc.sergio.common.FileIO;
 import es.urjc.sergio.common.RandomString;
 import es.urjc.sergio.rsa.RSALibrary;
@@ -17,35 +18,32 @@ import es.urjc.sergio.rsa.Signer;
 
 public class SliceEncrypt {
 
-    private final static String usage = "Usage: SliceEncrypt [filePath] [blockSize]";
-
-    public static void main(String[] args) {
-        System.out.println("Slice & Encrypt");
-
-        if (args.length != 2)
-            throw new InternalError(usage);
-
-        String filePath = args[0];
-        int blockSize = Integer.parseInt(args[1]);
-
-        File f = new File(filePath);
+    public static void sliceEncrypt(String filePath, String alias, int blockSize) {
+        File f = new File(ExternalStorage.getFilePath(filePath));
         if (f.exists() && !f.isDirectory()) {
 
             try {
                 RandomString random = new RandomString();
                 String sessionID = random.nextString();
-                String sessionPath = FileIO.sendPath + sessionID + "/";
+                String sessionPath = ExternalStorage.getFilePath(FileIO.sendPath + sessionID + "/");
+
+                if (sessionPath == null)
+                    throw new Exception("ExternalStorage unavailable");
 
                 FileIO.makeDirectory(sessionPath);
 
-                FileIO.append(FileIO.appPath + FileIO.listFile, sessionID + " " + filePath);
+                FileIO.append(ExternalStorage.getFilePath(FileIO.listFile), sessionID + " " + filePath);
 
                 Slicer slicer = new Slicer(f, blockSize, sessionID);
                 ArrayList<Slice> slices = slicer.slice();
 
-                Signer signer = new Signer(RSALibrary.PUBLIC_KEY_FILE);
-                for (Slice slice : slices)
+                System.out.println("Slices: " + slices);
+
+                Signer signer = new Signer(alias);
+                for (Slice slice : slices) {
+                    System.out.println(slice);
                     signer.sign(slice);
+                }
 
                 Encryptor encryptor = new Encryptor();
                 ArrayList<EncFile> files = encryptor.encrypt(slices);
@@ -55,7 +53,7 @@ public class SliceEncrypt {
                 KeyFile keyFile = new KeyFile(encryptor.getKeyEncoded());
                 signer.sign(keyFile);
 
-                EncKeyFile encKeyFile = new EncKeyFile(keyFile, RSALibrary.PUBLIC_KEY_FILE);
+                EncKeyFile encKeyFile = new EncKeyFile(keyFile, alias);
 
                 FileIO.write(encKeyFile, sessionPath);
 

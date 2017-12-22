@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -32,6 +33,7 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -48,6 +50,8 @@ import java.util.Objects;
 import javax.crypto.Cipher;
 import javax.security.auth.x500.X500Principal;
 
+import es.urjc.sergio.common.ExternalStorage;
+import es.urjc.sergio.common.FileIO;
 import es.urjc.sergio.rsa.RSALibrary;
 
 public class KeyStoreManager {
@@ -72,36 +76,43 @@ public class KeyStoreManager {
         return this.keyStore;
     }*/
 
-    public static void exportCertificate(String alias, String filePath) throws IOException {
+    public static void exportCertificate(String alias) throws IOException {
         Certificate certificate;
         if (Objects.equals(alias, mainAlias))
             certificate = getPrivateKeyEntry(alias).getCertificate();
         else
             certificate = getCertificateEntry(alias).getTrustedCertificate();
 
-        File file = new File(filePath);
-        FileOutputStream output = null;
-        if(!file.exists() && !file.isDirectory()) {
-            output = new FileOutputStream(file);
+        if (certificate == null)
+            return;
+
+        String fileName = alias + ".crt";
+        String filePath = FileIO.certificatesPath + fileName;
+
+        File certFile = ExternalStorage.getFile(filePath);
+        if (certFile.exists() && !certFile.isDirectory()) {
+            certFile.delete();
         }
+
+        FileOutputStream output = new FileOutputStream(certFile);
 
         try {
             output.write(certificate.getEncoded(), 0, certificate.getEncoded().length);
         } catch (CertificateEncodingException e) {
             Log.e(TAG, e.getMessage(), e);
-            return;
+        } finally {
+            if (output != null)
+                output.close();
         }
-
-        if (output != null)
-            output.close();
     }
 
-    public static void importCertificate(String alias, String filePath) throws IOException {
-        File file = new File(filePath);
+    public static void importCertificate(String alias, String fileName) throws IOException {
+        String filePath = FileIO.certificatesPath + fileName;
+        File certFile = ExternalStorage.getFile(filePath);
         FileInputStream input = null;
 
-        if(file.isFile() && file.getName().endsWith(".crt")) {
-            input = new FileInputStream(file);
+        if(certFile.isFile() && certFile.getName().endsWith(".crt")) {
+            input = new FileInputStream(certFile);
         }
 
         CertificateFactory certificateFactory;
@@ -112,6 +123,9 @@ public class KeyStoreManager {
         } catch (CertificateException e) {
             Log.e(TAG, e.getMessage(), e);
             return;
+        } finally {
+            if (input != null)
+                input.close();
         }
 
         try {
@@ -122,9 +136,6 @@ public class KeyStoreManager {
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
         }
-
-        if (input != null)
-            input.close();
     }
 
     public static boolean existsAlias(String alias) {
@@ -142,9 +153,9 @@ public class KeyStoreManager {
         try {
             KeyGenParameterSpec spec = new KeyGenParameterSpec.Builder(
                     alias,
-                    KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY | KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                    KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
                     .setDigests(KeyProperties.DIGEST_SHA512)
-                    .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
+                    //.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
                     .setKeySize(SecurityConstants.KEY_SIZE)
                     .build();
 
@@ -278,6 +289,20 @@ public class KeyStoreManager {
         }
     }
 
+    public static PublicKey getPublicKey(String alias) {
+        PublicKey publicKey;
+        if (Objects.equals(alias, mainAlias))
+            publicKey = getPrivateKeyEntry(alias).getCertificate().getPublicKey();
+        else
+            publicKey = getCertificateEntry(alias).getTrustedCertificate().getPublicKey();
+
+        return publicKey;
+    }
+
+    public static PrivateKey getPrivateKey(String alias) {
+        return getPrivateKeyEntry(alias).getPrivateKey();
+    }
+
     public static byte[] encrypt(String alias, byte[] plaintext) {
         try {
             PublicKey publicKey;
@@ -305,6 +330,21 @@ public class KeyStoreManager {
 
             //return Base64.encodeToString(RSALibrary.decrypt(ciphertext.getBytes(), privateKey), Base64.NO_WRAP);
         } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] sign(String alias, byte[] m) {
+        PrivateKey privateKey = getPrivateKeyEntry(alias).getPrivateKey();
+
+        try {
+            Signature s = Signature.getInstance(SecurityConstants.SIGNATURE_ALGORITHM);
+            s.initSign(privateKey);
+            s.update(m);
+
+            return s.sign();
+        } catch (Exception e) {
+            System.out.println("Exception signing");
             throw new RuntimeException(e);
         }
     }
@@ -438,6 +478,7 @@ public class KeyStoreManager {
         String TYPE_RSA = "RSA";
         String PADDING_TYPE = "PKCS1Padding";
         String BLOCKING_MODE = "NONE";
+        String SIGNATURE_ALGORITHM = "SHA512withRSA/PSS";
         int KEY_SIZE = 4096;
     }
 }

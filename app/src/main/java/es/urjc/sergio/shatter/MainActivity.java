@@ -11,151 +11,53 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.spongycastle.util.encoders.Hex;
-
-import java.io.File;
 import java.io.IOException;
-import java.security.Key;
-import java.security.KeyPair;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Objects;
 
-import javax.net.ssl.KeyManager;
-
+import es.urjc.sergio.common.ExternalStorage;
+import es.urjc.sergio.common.FileIO;
 import es.urjc.sergio.keystore.KeyStoreManager;
-import es.urjc.sergio.rsa.RSALibrary;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
-    private KeyStoreManager ksManager;
     private ArrayList<String> keyAliases;
-    //private final String keyStoreName = "myKeyStore";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        //File f = new File(keyStoreName);
-        //System.out.println(f.exists());
+        System.out.println("CertPath: " + ExternalStorage.createDirs(FileIO.certificatesPath));
+        System.out.println("SendPath: " + ExternalStorage.createDirs(FileIO.sendPath));
 
-        ksManager = new KeyStoreManager();
-
-        if(!KeyStoreManager.existsAlias(KeyStoreManager.mainAlias)) {
-            System.out.println("Main keys don't exist");
+        if (!KeyStoreManager.existsAlias(KeyStoreManager.mainAlias)) {
+            Log.d(TAG, "Main keys don't exist");
             try {
                 KeyStoreManager.generateKeyPair(KeyStoreManager.mainAlias);
             } catch (Exception e) {
-                System.err.println("Error creating the keys");
-                e.printStackTrace();
-            }
-            /*RSALibrary rsa = new RSALibrary();
-            try {
-                KeyPair keyPair = rsa.generateKeys();
-                ksManager.savePrivateKey(ksManager.mainAlias, keyPair.getPrivate(), keyPair.getPublic());
-            } catch (Exception e) {
-                System.err.println("Error creating the main key pair: " + e.getMessage());
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
                 System.exit(-1);
-            }*/
-            System.out.println("Main keys created");
+            }
+
+            Log.d(TAG, "Main keys created");
         }
 
-        //ksManager.saveKeyStore();
-
-        /*RSALibrary rsa = new RSALibrary();
         try {
-            KeyPair keyPair = rsa.generateKeys();
-            ksManager.savePrivateKey("main", keyPair.getPrivate(), keyPair.getPublic());
-        } catch (Exception e) {
-            System.err.println("Exception: " + e.getMessage());
+            KeyStoreManager.importCertificate("public", "main.crt");
+        } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
 
         refreshList();
-
-        /*try {
-            Key privateKey = ksManager.getPrivateKey(ksManager.mainAlias);
-            PublicKey publicKey = ksManager.getPublicKey(ksManager.mainAlias);
-
-            System.out.println("PUBLIC 2: " + publicKey.getEncoded().length);
-            System.out.println("PRIVATE 2: " + Arrays.toString(privateKey.getEncoded()));
-        } catch (Exception e) {
-            System.err.println("Exception: " + e.getMessage());
-            System.exit(-1);
-        }*/
-
-        /*try {
-            PrivateKey privateKey = (PrivateKey) RSALibrary.getKey(RSALibrary.PRIVATE_KEY_FILE);
-            System.out.println(Arrays.toString(Hex.decode(privateKey.getEncoded())));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-
-        System.out.println("DONE");
-    }
-
-    private class DeleteButton implements View.OnClickListener {
-        String alias;
-
-        private DeleteButton(String alias) {
-            this.alias = alias;
-        }
-
-        @Override
-        public void onClick(View button) {
-            deleteKey(this.alias);
-        }
-    }
-
-    private class SelectButton implements View.OnClickListener {
-        String alias;
-
-        private SelectButton(String alias) {
-            this.alias = alias;
-        }
-
-        @Override
-        public void onClick(View button) {
-            EditText sessionText = findViewById(R.id.sessionText);
-            String sessionID = sessionText.getText().toString();
-            String text = null;
-
-            try {
-                //PrivateKey privateKey = ksManager.getPrivateKey(this.alias);
-                //PublicKey publicKey = ksManager.getPublicKey(this.alias);
-
-                //byte[] cipherText = RSALibrary.encrypt(sessionID.getBytes(), publicKey);
-                //byte[] plaintext = RSALibrary.decrypt(cipherText, privateKey);
-
-                /*if (cipherText != null) {
-                    text = Arrays.toString(cipherText);
-                }*/
-                //text = Hex.toHexString(ksManager.sign(this.alias, sessionID.getBytes()));
-                byte[] cipherText = KeyStoreManager.encrypt(this.alias, sessionID.getBytes());
-                text = new String(KeyStoreManager.decrypt(this.alias, cipherText));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            int time = Toast.LENGTH_SHORT;
-            Toast msg = Toast.makeText(MainActivity.this, text, time);
-            msg.show();
-        }
     }
 
     public void deleteKey(final String alias) {
-        AlertDialog alertDialog =new AlertDialog.Builder(this)
+        AlertDialog alertDialog = new AlertDialog.Builder(this)
                 .setTitle("Delete Key")
                 .setMessage("Do you want to delete the key \"" + alias + "\" from the keystore?")
                 .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
@@ -181,8 +83,8 @@ public class MainActivity extends AppCompatActivity {
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
 
-            //if(Objects.equals(alias, ksManager.mainAlias))
-            //    continue;
+            if(Objects.equals(alias, KeyStoreManager.mainAlias))
+                continue;
 
             keyAliases.add(alias);
         }
@@ -196,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         listLayout.removeAllViews();
 
         for (String alias : keyAliases) {
-            System.out.println("Alias found: " + alias);
+            Log.i(TAG, "Alias found: " + alias);
             RelativeLayout card = (RelativeLayout) getLayoutInflater().inflate(R.layout.card, null);
             fillCard(card, alias);
             listLayout.addView(card);
@@ -213,14 +115,74 @@ public class MainActivity extends AppCompatActivity {
                     text_view.setText(alias);
                     break;
                 case R.id.deleteButton:
-                    Button delete_button = (Button) v;
-                    delete_button.setOnClickListener(new DeleteButton(alias));
+                    Button deleteButton = (Button) v;
+                    deleteButton.setOnClickListener(new DeleteButton(alias));
                     break;
-                case R.id.selectButton:
-                    Button select_button = (Button) v;
-                    select_button.setOnClickListener(new SelectButton(alias));
+                case R.id.decryptButton:
+                    Button decryptButton = (Button) v;
+                    decryptButton.setOnClickListener(new DecryptButton(alias));
+                    break;
+                case R.id.encryptButton:
+                    Button encryptButton = (Button) v;
+                    encryptButton.setOnClickListener(new EncryptButton(alias));
                     break;
             }
+        }
+    }
+
+    private class DeleteButton implements View.OnClickListener {
+        String alias;
+
+        private DeleteButton(String alias) {
+            this.alias = alias;
+        }
+
+        @Override
+        public void onClick(View button) {
+            deleteKey(this.alias);
+        }
+    }
+
+    private class DecryptButton implements View.OnClickListener {
+        String alias;
+
+        private DecryptButton(String alias) {
+            this.alias = alias;
+        }
+
+        @Override
+        public void onClick(View button) {
+            EditText editText = findViewById(R.id.sessionText);
+            String sessionID = editText.getText().toString();
+
+            try {
+                KeyStoreManager.exportCertificate(KeyStoreManager.mainAlias);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            int time = Toast.LENGTH_SHORT;
+            Toast msg = Toast.makeText(MainActivity.this, alias + ' ' + sessionID, time);
+            msg.show();
+        }
+    }
+
+    private class EncryptButton implements View.OnClickListener {
+        String alias;
+
+        private EncryptButton(String alias) {
+            this.alias = alias;
+        }
+
+        public void onClick(View Button) {
+            EditText editText = findViewById(R.id.sessionText);
+            String filePath = editText.getText().toString();
+
+            SliceEncrypt.sliceEncrypt(filePath, this.alias, 10);
+
+            int time = Toast.LENGTH_SHORT;
+            Toast msg = Toast.makeText(MainActivity.this, alias + ' ' + filePath, time);
+            msg.show();
         }
     }
 }

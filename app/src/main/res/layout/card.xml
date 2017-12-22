@@ -3,7 +3,7 @@
     android:id="@+id/card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="5dp">
+    android:layout_margin="20dp">
 
     <TextView
         android:id="@+id/keyAlias"
@@ -22,11 +22,19 @@
         android:text="@string/delete"/>
 
     <Button
-        android:id="@+id/selectButton"
+        android:id="@+id/encryptButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/keyAlias"
         android:layout_alignEnd="@+id/keyAlias"
-        android:text="@string/select"/>
+        android:text="@string/encrypt"/>
+
+    <Button
+        android:id="@+id/decryptButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/keyAlias"
+        android:layout_toStartOf="@+id/encryptButton"
+        android:text="@string/decrypt"/>
 
 </RelativeLayout>

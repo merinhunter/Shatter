@@ -3,4 +3,6 @@
     <string name="delete">Delete key</string>
     <string name="select">Select</string>
     <string name="sessionID">Session ID</string>
+    <string name="encrypt">Encrypt</string>
+    <string name="decrypt">Decrypt</string>
 </resources>

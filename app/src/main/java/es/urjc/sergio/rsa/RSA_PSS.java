@@ -6,12 +6,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
+import java.security.interfaces.RSAKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.zip.DataFormatException;
 
 import es.urjc.sergio.common.Bytes;
+import es.urjc.sergio.keystore.KeyStoreManager;
 
 class RSA_PSS {
     private final String PROVIDER = "BC";
@@ -24,6 +26,8 @@ class RSA_PSS {
     private MessageDigest md;
 
     private int emBits, emLen, hLen, sLen;
+
+    private String alias;
 
     RSA_PSS(Key key, String hash, byte[] salt) {
 
@@ -72,6 +76,26 @@ class RSA_PSS {
         this.sLen = emLen - hLen - 2;
     }
 
+    RSA_PSS(String alias) {
+        this.alias = alias;
+        RSAKey key = (RSAKey) KeyStoreManager.getPublicKey(alias);
+
+        N = key.getModulus();
+
+        this.emBits = this.N.bitLength() - 1;
+        this.emLen = (int) Math.ceil(this.emBits / 8.0);
+
+        try {
+            String HASH_ALGORITHM = "SHA-512";
+            this.md = MessageDigest.getInstance(HASH_ALGORITHM, PROVIDER);
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
+            e.printStackTrace();
+        }
+
+        this.hLen = md.getDigestLength();
+        this.sLen = emLen - hLen - 2;
+    }
+
     /**
      * RSASSA-PSS-SIGN
      *
@@ -82,11 +106,13 @@ class RSA_PSS {
 
         byte[] EM = EMSA_PSS_ENCODE(M);
 
-        BigInteger m = new BigInteger(1, EM);
+        return KeyStoreManager.encrypt(this.alias, EM);
+
+        /*BigInteger m = new BigInteger(1, EM);
 
         BigInteger s = RSASP1(m);
 
-        return Bytes.I2OSP(s, this.emLen);
+        return Bytes.I2OSP(s, this.emLen);*/
     }
 
     /**

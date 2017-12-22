@@ -86,7 +86,6 @@ public class Header {
     public String toString() {
         String s = "";
 
-        return s + index + "|" + nBlocks + "|" + new String(sessionID) + "|" + fileSize + "|"
-                + this.signature.toString();
+        return s + index + "|" + nBlocks + "|" + new String(sessionID) + "|" + fileSize;
     }
 }

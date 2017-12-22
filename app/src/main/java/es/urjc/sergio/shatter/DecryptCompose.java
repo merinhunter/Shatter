@@ -10,27 +10,21 @@ import es.urjc.sergio.cipher.Decryptor;
 import es.urjc.sergio.cipher.EncFile;
 import es.urjc.sergio.cipher.EncKeyFile;
 import es.urjc.sergio.cipher.KeyFile;
+import es.urjc.sergio.common.ExternalStorage;
 import es.urjc.sergio.common.FileIO;
 import es.urjc.sergio.rsa.RSALibrary;
 import es.urjc.sergio.rsa.Signer;
 
 public class DecryptCompose {
 
-    private final static String usage = "Usage: DecryptCompose [sessionID]";
-
-    public static void main(String[] args) {
-        System.out.println("Decrypt & Compose");
-
-        if (args.length != 1)
-            throw new InternalError(usage);
-
-        String sessionID = args[0];
-
-        String sessionPath = FileIO.appPath + sessionID + '/';
+    public static void decryptCompose(String sessionID, String alias) {
+        String sessionPath = ExternalStorage.getFilePath(FileIO.appPath + sessionID + '/');
+        String tmpPath = sessionPath + FileIO.decomposedPath;
         String badFilePath = sessionPath + FileIO.badFile;
         String errorsFilePath = sessionPath + FileIO.errorsFile;
 
-        String tmpPath = FileIO.decomposedPath + sessionID;
+        FileIO.makeDirectory(sessionPath);
+        FileIO.makeDirectory(tmpPath);
 
         ArrayList<String> errors = new ArrayList<>();
         ArrayList<String> bad = new ArrayList<>();
@@ -54,7 +48,7 @@ public class DecryptCompose {
                 System.exit(-1);
             }
 
-            Signer signer = new Signer(RSALibrary.PUBLIC_KEY_FILE);
+            Signer signer = new Signer(alias);
             if (!signer.verify(keyFile)) {
                 System.err.println("KeyFile has invalid signature");
                 bad.add("KeyFile has invalid signature");

@@ -2,6 +2,7 @@ package es.urjc.sergio.cipher;
 
 import java.security.PrivateKey;
 
+import es.urjc.sergio.keystore.KeyStoreManager;
 import es.urjc.sergio.rsa.RSALibrary;
 import es.urjc.sergio.rsa.Signature;
 
@@ -27,7 +28,8 @@ public class KeyFile {
             throw new Exception("EncKeyFile is corrupted");
         }
 
-        this.signature = new Signature(encKeyFile.getSignature(), privKey);
+        //this.signature = new Signature(encKeyFile.getSignature(), privKey);
+        this.signature = new Signature(encKeyFile.getSignature(), KeyStoreManager.mainAlias);
     }
 
     public byte[] getKey() {

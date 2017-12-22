@@ -16,13 +16,14 @@ import es.urjc.sergio.cipher.EncKeyFile;
 public class FileIO {
     public final static String appPath = "Shatter/";
     public final static String sendPath = appPath + "send/";
+    public final static String certificatesPath = appPath + "certs/";
     public final static String donePath = "done/";
     public final static String decomposedPath = "tmp/";
 
     public final static String badFile = "bad.txt";
     public final static String errorsFile = "errors.txt";
     public final static String doneFile = "done.txt";
-    public final static String listFile = "list.txt";
+    public final static String listFile = appPath + "list.txt";
 
     /**
      * Creates a directory in the specified path and, if it already exists, deletes
@@ -34,7 +35,7 @@ public class FileIO {
         if (dir.exists())
             dir.delete();
 
-        return dir.mkdir();
+        return dir.mkdirs();
     }
 
     /**
