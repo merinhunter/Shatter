@@ -1,14 +1,12 @@
 package es.urjc.sergio.rsa;
 
 import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.util.zip.DataFormatException;
 
 import es.urjc.sergio.assembler.Slice;
 import es.urjc.sergio.cipher.EncFile;
 import es.urjc.sergio.cipher.KeyFile;
-import es.urjc.sergio.keystore.KeyStoreManager;
+import es.urjc.sergio.keystore.KeyStoreHandler;
 
 public class Signer {
     private String alias;
@@ -17,9 +15,9 @@ public class Signer {
     public Signer(String alias) {
         try {
             this.alias = alias;
-            publicKey = KeyStoreManager.getPublicKey(alias);
+            this.publicKey = KeyStoreHandler.getPublicKey(alias);
             //publicKey = RSALibrary.getKey(pubKeyPath);
-            privateKey = KeyStoreManager.getPrivateKey(KeyStoreManager.mainAlias);
+            this.privateKey = KeyStoreHandler.getPrivateKey(KeyStoreHandler.mainAlias);
             //privateKey = RSALibrary.getKey(RSALibrary.PRIVATE_KEY_FILE);
         } catch (Exception e) {
             System.err.println("Signer exception: " + e.getMessage());
@@ -29,7 +27,7 @@ public class Signer {
 
     public void sign(Slice slice) {
         //RSA_PSS rsapss = new RSA_PSS(privateKey);
-        //RSA_PSS rsapss = new RSA_PSS(KeyStoreManager.mainAlias);
+        //RSA_PSS rsapss = new RSA_PSS(KeyStoreHandler.mainAlias);
 
         /*try {
             Signature signature = new Signature(rsapss.sign(slice.getData()));
@@ -39,13 +37,14 @@ public class Signer {
             System.exit(-1);
         }*/
 
-        Signature signature = new Signature(KeyStoreManager.sign(KeyStoreManager.mainAlias, slice.getData()));
+        byte[] byteSignature = KeyStoreHandler.sign(KeyStoreHandler.mainAlias, slice.getData());
+        Signature signature = new Signature(byteSignature);
         slice.getHeader().setSignature(signature);
     }
 
     public void sign(KeyFile keyFile) {
         //RSA_PSS rsapss = new RSA_PSS(privateKey);
-        //RSA_PSS rsapss = new RSA_PSS(KeyStoreManager.mainAlias);
+        //RSA_PSS rsapss = new RSA_PSS(KeyStoreHandler.mainAlias);
 
         /*try {
             Signature signature = new Signature(rsapss.sign(keyFile.getKey()));
@@ -58,13 +57,14 @@ public class Signer {
             System.exit(-1);
         }*/
 
-        Signature signature = new Signature(KeyStoreManager.sign(KeyStoreManager.mainAlias, keyFile.getKey()));
+        byte[] byteSignature = KeyStoreHandler.sign(KeyStoreHandler.mainAlias,  keyFile.getKey());
+        Signature signature = new Signature(byteSignature);
         keyFile.setSignature(signature);
     }
 
     public void sign(EncFile file) {
         //RSA_PSS rsapss = new RSA_PSS(privateKey);
-        //RSA_PSS rsapss = new RSA_PSS(KeyStoreManager.mainAlias);
+        //RSA_PSS rsapss = new RSA_PSS(KeyStoreHandler.mainAlias);
 
         /*try {
             Signature signature = new Signature(rsapss.sign(file.getIV()));
@@ -79,14 +79,15 @@ public class Signer {
             System.exit(-1);
         }*/
 
-        Signature signature = new Signature(KeyStoreManager.sign(KeyStoreManager.mainAlias, file.getIV()));
+        byte[] byteSignature = KeyStoreHandler.sign(KeyStoreHandler.mainAlias, file.getIV());
+        Signature signature = new Signature(byteSignature);
         SecureSignature secSignature = new SecureSignature(signature, this.alias);
 
         file.setSignature(secSignature);
     }
 
     public boolean verify(Slice slice) {
-        RSA_PSS rsapss = new RSA_PSS(publicKey);
+        /*RSA_PSS rsapss = new RSA_PSS(publicKey);
 
         try {
             if (!rsapss.verify(slice.getData(), slice.getHeader().getSignature().getSignature()))
@@ -94,13 +95,18 @@ public class Signer {
         } catch (DataFormatException e) {
             System.err.println("Verify exception: " + e.getMessage());
             System.exit(-1);
-        }
+        }*/
 
-        return true;
+        byte[] data = slice.getData();
+        byte[] signature = slice.getHeader().getSignature().getSignature();
+
+        return KeyStoreHandler.verify(this.alias, data, signature);
+
+        //return true;
     }
 
     public boolean verify(KeyFile keyFile) {
-        RSA_PSS rsapss = new RSA_PSS(publicKey);
+        /*RSA_PSS rsapss = new RSA_PSS(publicKey);
         boolean result = false;
 
         try {
@@ -111,24 +117,34 @@ public class Signer {
         } catch (Exception e) {
             System.err.println("Verify Exception: " + e.getMessage());
             System.exit(-1);
-        }
+        }*/
 
-        return result;
+        byte[] key = keyFile.getKey();
+        byte[] signature = keyFile.getSignature().getSignature();
+
+        return KeyStoreHandler.verify(this.alias, key, signature);
+
+        //return result;
     }
 
     public boolean verify(EncFile file) {
-        RSA_PSS rsapss = new RSA_PSS(publicKey);
+        //RSA_PSS rsapss = new RSA_PSS(publicKey);
         SecureSignature secSignature = file.getSignature();
-        Signature signature = new Signature(secSignature, KeyStoreManager.mainAlias);
+        Signature signature = new Signature(secSignature, KeyStoreHandler.mainAlias);
 
-        try {
+        /*try {
             if (!rsapss.verify(file.getIV(), signature.getSignature()))
                 return false;
         } catch (DataFormatException e) {
             System.err.println("Verify exception: " + e.getMessage());
             System.exit(-1);
-        }
+        }*/
 
-        return true;
+        byte[] iv = file.getIV();
+        byte[] s = signature.getSignature();
+
+        return KeyStoreHandler.verify(this.alias, iv, s);
+
+        //return true;
     }
 }

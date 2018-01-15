@@ -1,13 +1,16 @@
 package es.urjc.sergio.common;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import es.urjc.sergio.cipher.EncFile;
@@ -23,6 +26,7 @@ public class FileIO {
     public final static String badFile = "bad.txt";
     public final static String errorsFile = "errors.txt";
     public final static String doneFile = "done.txt";
+    public final static String indexFile = "index.txt";
     public final static String listFile = appPath + "list.txt";
 
     /**
@@ -33,7 +37,11 @@ public class FileIO {
         File dir = new File(dirPath);
 
         if (dir.exists())
-            dir.delete();
+            try {
+                FileUtils.deleteDirectory(dir);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
         return dir.mkdirs();
     }
@@ -78,7 +86,6 @@ public class FileIO {
             String fileName = random.nextString();
             String filePath = destPath + fileName + ".key";
             File f = new File(filePath);
-
             if (!f.exists() && !f.isDirectory()) {
                 output = new FileOutputStream(f);
                 break;
@@ -86,6 +93,21 @@ public class FileIO {
         }
 
         output.write(encKeyFile.toBytes(), 0, encKeyFile.toBytes().length);
+
+        if (output != null)
+            output.close();
+    }
+
+    public static void write(byte[] data, String indexPath) throws IOException {
+        FileOutputStream output;
+
+        File index = new File(indexPath);
+        if (!index.exists() && !index.isDirectory())
+            output = new FileOutputStream(index);
+        else
+            return;
+
+        output.write(data);
 
         if (output != null)
             output.close();
@@ -150,6 +172,38 @@ public class FileIO {
         }
 
         return EncKeyFile.fromBytes(data);
+    }
+
+    public static ArrayList<String> readIndex(String indexPath) {
+        ArrayList<String> index = new ArrayList<>();
+
+        FileInputStream input = null;
+        BufferedReader reader = null;
+
+        try {
+            input = new FileInputStream(indexPath);
+            reader = new BufferedReader(new InputStreamReader(input));
+
+            String line = reader.readLine();
+            while (line != null) {
+                index.add(line);
+                line = reader.readLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (reader != null)
+                    reader.close();
+
+                if (input != null)
+                    input.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return index;
     }
 
     public static void append(String filePath, String m) {

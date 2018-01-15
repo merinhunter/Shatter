@@ -54,14 +54,14 @@ import es.urjc.sergio.common.ExternalStorage;
 import es.urjc.sergio.common.FileIO;
 import es.urjc.sergio.rsa.RSALibrary;
 
-public class KeyStoreManager {
-    private static final String TAG = "KeyStoreManager";
+public class KeyStoreHandler {
+    private static final String TAG = "KeyStoreHandler";
     public static final String mainAlias = "main";
     //private final String password = "password";
     //private KeyStore.ProtectionParameter pwdParameter;
     //private KeyStore keyStore;
 
-    /*public KeyStoreManager() {
+    /*public KeyStoreHandler() {
 
         try {
             this.keyStore = KeyStore.getInstance("AndroidKeyStore");
@@ -83,8 +83,10 @@ public class KeyStoreManager {
         else
             certificate = getCertificateEntry(alias).getTrustedCertificate();
 
-        if (certificate == null)
+        if (certificate == null) {
+            Log.w(TAG, "Certificate is null");
             return;
+        }
 
         String fileName = alias + ".crt";
         String filePath = FileIO.certificatesPath + fileName;
@@ -149,23 +151,47 @@ public class KeyStoreManager {
         }
     }
 
-    public static void generateKeyPair(String alias) {
+    public static void generateKeyPair(String alias) throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_RSA, SecurityConstants.KEYSTORE_PROVIDER);
+        kpg.initialize(new KeyGenParameterSpec.Builder(
+                alias,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
+                .setDigests(KeyProperties.DIGEST_SHA512)
+                .setRandomizedEncryptionRequired(false)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setSignaturePaddings(KeyProperties.SIGNATURE_PADDING_RSA_PSS)
+                .setKeySize(SecurityConstants.KEY_SIZE)
+                .build());
+        /*KeyGenParameterSpec spec = new KeyGenParameterSpec.Builder(
+                alias,
+                KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
+                .setDigests(KeyProperties.DIGEST_SHA512)
+                //.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
+                .setKeySize(SecurityConstants.KEY_SIZE)
+                .build();
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_RSA, SecurityConstants.KEYSTORE_PROVIDER);
+        kpg.initialize(spec);*/
+
+        kpg.generateKeyPair();
+    }
+
+    public static void generateKeyPairTest(String alias) {
         try {
-            KeyGenParameterSpec spec = new KeyGenParameterSpec.Builder(
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(
+                    KeyProperties.KEY_ALGORITHM_EC, SecurityConstants.KEYSTORE_PROVIDER);
+            kpg.initialize(new KeyGenParameterSpec.Builder(
                     alias,
                     KeyProperties.PURPOSE_SIGN | KeyProperties.PURPOSE_VERIFY)
-                    .setDigests(KeyProperties.DIGEST_SHA512)
-                    //.setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
-                    .setKeySize(SecurityConstants.KEY_SIZE)
-                    .build();
-
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance(
-                    KeyProperties.KEY_ALGORITHM_RSA, SecurityConstants.KEYSTORE_PROVIDER);
-            kpg.initialize(spec);
-
+                    .setDigests(KeyProperties.DIGEST_SHA256,
+                            KeyProperties.DIGEST_SHA512)
+                    .build());
             kpg.generateKeyPair();
-        } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidAlgorithmParameterException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage(), e);
+            e.printStackTrace();
         }
     }
 
@@ -278,7 +304,7 @@ public class KeyStoreManager {
             }
 
             if (!(entry instanceof TrustedCertificateEntry)) {
-                Log.w(TAG, "Not an instance of a PrivateKeyEntry");
+                Log.w(TAG, "Not an instance of a TrustedCertificateEntry");
                 return null;
             }
 
@@ -305,47 +331,116 @@ public class KeyStoreManager {
 
     public static byte[] encrypt(String alias, byte[] plaintext) {
         try {
-            PublicKey publicKey;
-            if (Objects.equals(alias, mainAlias))
-                publicKey = getPrivateKeyEntry(alias).getCertificate().getPublicKey();
-            else
-                publicKey = getCertificateEntry(alias).getTrustedCertificate().getPublicKey();
+            PublicKey publicKey = getPublicKey(alias);
+            //System.out.println("Length: " + publicKey.getEncoded().length);
+            //System.out.println("Algorithm" + publicKey.getAlgorithm());
+            //System.out.println("Format" + publicKey.getFormat());
 
             Cipher cipher = getCipher();
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            System.out.println(Hex.toHexString(plaintext));
+            System.out.println(plaintext.length);
             return cipher.doFinal(plaintext);
 
             //return Base64.encodeToString(RSALibrary.encrypt(plaintext.getBytes(), publicKey), Base64.NO_WRAP);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            Log.e(TAG, e.getMessage(), e);
+            return null;
         }
     }
 
     public static byte[] decrypt(String alias, byte[] cipherText) {
         try {
-            PrivateKey privateKey = getPrivateKeyEntry(alias).getPrivateKey();
+            PrivateKey privateKey = getPrivateKey(alias);
+            //System.out.println(privateKey);
+            //System.out.println("Length: " + privateKey.getEncoded().length);
+            //System.out.println("Algorithm" + privateKey.getAlgorithm());
+            //System.out.println("Format" + privateKey.getFormat());
+
             Cipher cipher = getCipher();
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             return cipher.doFinal(cipherText);
 
-            //return Base64.encodeToString(RSALibrary.decrypt(ciphertext.getBytes(), privateKey), Base64.NO_WRAP);
+            //return Base64.encodeToString(RSALibrary.decrypt(cipherText.getBytes(), privateKey), Base64.NO_WRAP);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            Log.e(TAG, e.getMessage(), e);
+            return null;
         }
     }
 
-    public static byte[] sign(String alias, byte[] m) {
-        PrivateKey privateKey = getPrivateKeyEntry(alias).getPrivateKey();
-
+    public static byte[] sign(String alias, byte[] data) {
         try {
+            PrivateKey privateKey = getPrivateKey(alias);
+
             Signature s = Signature.getInstance(SecurityConstants.SIGNATURE_ALGORITHM);
             s.initSign(privateKey);
-            s.update(m);
+            s.update(data);
 
             return s.sign();
         } catch (Exception e) {
-            System.out.println("Exception signing");
-            throw new RuntimeException(e);
+            Log.e(TAG, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    public static boolean verify(String alias, byte[] data, byte[] signature) {
+        try {
+            PublicKey publicKey = getPublicKey(alias);
+
+            Signature s = Signature.getInstance(SecurityConstants.SIGNATURE_ALGORITHM);
+            s.initVerify(publicKey);
+            s.update(data);
+
+            return s.verify(signature);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage(), e);
+            return false;
+        }
+    }
+
+    public static byte[] signTest(String alias, byte[] data) {
+        try {
+            KeyStore ks = KeyStore.getInstance(SecurityConstants.KEYSTORE_PROVIDER);
+            ks.load(null);
+            KeyStore.Entry entry = ks.getEntry(alias, null);
+
+            if (!(entry instanceof PrivateKeyEntry)) {
+                Log.w(TAG, "Not an instance of a PrivateKeyEntry");
+                return null;
+            }
+
+            Signature s = Signature.getInstance("SHA256withECDSA");
+            s.initSign(((PrivateKeyEntry) entry).getPrivateKey());
+            s.update(data);
+
+            return s.sign();
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage(), e);
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static boolean verifyTest(String alias, byte[] data, byte[] signature) {
+        try {
+            KeyStore ks = KeyStore.getInstance(SecurityConstants.KEYSTORE_PROVIDER);
+            ks.load(null);
+            KeyStore.Entry entry = ks.getEntry(alias, null);
+
+            if (!(entry instanceof PrivateKeyEntry)) {
+                Log.w(TAG, "Not an instance of a PrivateKeyEntry");
+                return false;
+            }
+
+            Signature s = Signature.getInstance("SHA256withECDSA");
+            s.initVerify(((PrivateKeyEntry) entry).getCertificate());
+            s.update(data);
+
+            return s.verify(signature);
+        } catch (Exception e) {
+            Log.e(TAG, e.getMessage(), e);
+            return false;
         }
     }
 
@@ -468,16 +563,18 @@ public class KeyStoreManager {
     private static Cipher getCipher() throws Exception {
         return Cipher.getInstance(
                 String.format("%s/%s/%s",
-                        SecurityConstants.TYPE_RSA,
+                        KeyProperties.KEY_ALGORITHM_RSA,
                         SecurityConstants.BLOCKING_MODE,
                         SecurityConstants.PADDING_TYPE));
+        //return Cipher.getInstance(KeyProperties.KEY_ALGORITHM_RSA);
     }
 
     public interface SecurityConstants {
         String KEYSTORE_PROVIDER = "AndroidKeyStore";
-        String TYPE_RSA = "RSA";
-        String PADDING_TYPE = "PKCS1Padding";
         String BLOCKING_MODE = "NONE";
+        //String PADDING_TYPE = "PKCS1Padding";
+        //String PADDING_TYPE = "OAEPWithSHA-512AndMGF1Padding";
+        String PADDING_TYPE = "NoPadding";
         String SIGNATURE_ALGORITHM = "SHA512withRSA/PSS";
         int KEY_SIZE = 4096;
     }

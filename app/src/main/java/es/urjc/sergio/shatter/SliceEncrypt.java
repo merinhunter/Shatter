@@ -1,5 +1,7 @@
 package es.urjc.sergio.shatter;
 
+import org.spongycastle.util.encoders.Hex;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -37,7 +39,7 @@ public class SliceEncrypt {
                 Slicer slicer = new Slicer(f, blockSize, sessionID);
                 ArrayList<Slice> slices = slicer.slice();
 
-                System.out.println("Slices: " + slices);
+                //System.out.println("Slices: " + slices);
 
                 Signer signer = new Signer(alias);
                 for (Slice slice : slices) {
@@ -52,6 +54,8 @@ public class SliceEncrypt {
 
                 KeyFile keyFile = new KeyFile(encryptor.getKeyEncoded());
                 signer.sign(keyFile);
+
+                System.out.println(Hex.toHexString(keyFile.getKey()));
 
                 EncKeyFile encKeyFile = new EncKeyFile(keyFile, alias);
 

@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.zip.DataFormatException;
 
 import es.urjc.sergio.common.Bytes;
-import es.urjc.sergio.keystore.KeyStoreManager;
+import es.urjc.sergio.keystore.KeyStoreHandler;
 
 class RSA_PSS {
     private final String PROVIDER = "BC";
@@ -78,7 +78,7 @@ class RSA_PSS {
 
     RSA_PSS(String alias) {
         this.alias = alias;
-        RSAKey key = (RSAKey) KeyStoreManager.getPublicKey(alias);
+        RSAKey key = (RSAKey) KeyStoreHandler.getPublicKey(alias);
 
         N = key.getModulus();
 
@@ -106,7 +106,7 @@ class RSA_PSS {
 
         byte[] EM = EMSA_PSS_ENCODE(M);
 
-        return KeyStoreManager.encrypt(this.alias, EM);
+        return KeyStoreHandler.encrypt(this.alias, EM);
 
         /*BigInteger m = new BigInteger(1, EM);
 

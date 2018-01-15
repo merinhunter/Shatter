@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import es.urjc.sergio.common.ExternalStorage;
 import es.urjc.sergio.common.FileIO;
 
 public class Composer {
@@ -16,7 +17,7 @@ public class Composer {
     private FileOutputStream output;
 
     public Composer(String sessionID) {
-        String sessionPath = FileIO.appPath + sessionID + '/';
+        String sessionPath = ExternalStorage.getFilePath(FileIO.appPath + sessionID + '/');
         this.donePath = sessionPath + FileIO.donePath;
         this.filePath = donePath + sessionID;
         this.doneFilePath = sessionPath + FileIO.doneFile;

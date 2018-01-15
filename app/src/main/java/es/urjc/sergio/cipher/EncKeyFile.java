@@ -1,11 +1,9 @@
 package es.urjc.sergio.cipher;
 
 import java.nio.ByteBuffer;
-import java.security.PublicKey;
 
 import es.urjc.sergio.common.Bytes;
-import es.urjc.sergio.keystore.KeyStoreManager;
-import es.urjc.sergio.rsa.RSALibrary;
+import es.urjc.sergio.keystore.KeyStoreHandler;
 import es.urjc.sergio.rsa.SecureSignature;
 
 public class EncKeyFile {
@@ -17,7 +15,7 @@ public class EncKeyFile {
 
         try {
             //pubKey = (PublicKey) RSALibrary.getKey(pubKeyPath);
-            pubKey = KeyStoreManager.getPublicKey(alias);
+            pubKey = KeyStoreHandler.getPublicKey(alias);
         } catch (Exception e) {
             System.err.println("Error getting the public key: " + e.getMessage());
             System.exit(-1);
@@ -27,7 +25,7 @@ public class EncKeyFile {
         this.header.setSignature(new SecureSignature(keyFile.getSignature(), alias));
 
         //this.encKey = RSALibrary.encrypt(keyFile.getKey(), pubKey);
-        this.encKey = KeyStoreManager.encrypt(alias, keyFile.getKey());
+        this.encKey = KeyStoreHandler.encrypt(alias, keyFile.getKey());
     }
 
     private EncKeyFile(EncKeyFileHeader header, byte[] encKey) {

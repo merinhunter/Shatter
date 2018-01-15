@@ -2,9 +2,7 @@ package es.urjc.sergio.rsa;
 
 import org.spongycastle.util.encoders.Hex;
 
-import java.security.PrivateKey;
-
-import es.urjc.sergio.keystore.KeyStoreManager;
+import es.urjc.sergio.keystore.KeyStoreHandler;
 
 public class Signature {
     public static final int BYTES = 512;
@@ -15,7 +13,7 @@ public class Signature {
     }
 
     public Signature(SecureSignature secSignature, String alias) {
-        this.signature = KeyStoreManager.decrypt(alias, secSignature.getSignature());
+        this.signature = KeyStoreHandler.decrypt(alias, secSignature.getSignature());
         //this.signature = RSALibrary.decrypt(secSignature.getSignature(), privKey);
     }
 
