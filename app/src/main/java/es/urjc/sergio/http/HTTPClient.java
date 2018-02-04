@@ -34,14 +34,14 @@ public class HTTPClient {
 
     public void getFile(String url, String tmpPath) throws Exception {
         String filename = url.substring(url.lastIndexOf('/') + 1);
-        System.out.println("Getting " + url);
+        Log.d(TAG, "Getting " + url);
 
         HttpGetRequest getRequest = new HttpGetRequest();
 
         byte[] file = getRequest.execute(url).get();
 
         if (file == null) {
-            Log.d(TAG, url + " is null");
+            Log.e(TAG, url + " is null");
             throw new Exception(url + " missing");
         }
 
