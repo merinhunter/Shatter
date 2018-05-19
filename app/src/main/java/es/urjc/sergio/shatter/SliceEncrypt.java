@@ -1,7 +1,5 @@
 package es.urjc.sergio.shatter;
 
-import org.spongycastle.util.encoders.Hex;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -15,13 +13,12 @@ import es.urjc.sergio.cipher.KeyFile;
 import es.urjc.sergio.common.ExternalStorage;
 import es.urjc.sergio.common.FileIO;
 import es.urjc.sergio.common.RandomString;
-import es.urjc.sergio.rsa.RSALibrary;
 import es.urjc.sergio.rsa.Signer;
 
 public class SliceEncrypt {
 
     public static void sliceEncrypt(String filePath, String alias, int blockSize) {
-        File f = new File(ExternalStorage.getFilePath(filePath));
+        File f = new File(filePath);
         if (f.exists() && !f.isDirectory()) {
 
             try {
@@ -34,16 +31,13 @@ public class SliceEncrypt {
 
                 FileIO.makeDirectory(sessionPath);
 
-                FileIO.append(ExternalStorage.getFilePath(FileIO.listFile), sessionID + " " + filePath);
+                FileIO.append(ExternalStorage.getFilePath(FileIO.listFile), "ID:" + sessionID + " Path:" + filePath + " Alias:" + alias);
 
                 Slicer slicer = new Slicer(f, blockSize, sessionID);
                 ArrayList<Slice> slices = slicer.slice();
 
-                //System.out.println("Slices: " + slices);
-
                 Signer signer = new Signer(alias);
                 for (Slice slice : slices) {
-                    System.out.println(slice);
                     signer.sign(slice);
                 }
 
@@ -54,8 +48,6 @@ public class SliceEncrypt {
 
                 KeyFile keyFile = new KeyFile(encryptor.getKeyEncoded());
                 signer.sign(keyFile);
-
-                System.out.println(Hex.toHexString(keyFile.getKey()));
 
                 EncKeyFile encKeyFile = new EncKeyFile(keyFile, alias);
 

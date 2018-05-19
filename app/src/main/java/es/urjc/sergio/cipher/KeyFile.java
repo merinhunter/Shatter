@@ -26,7 +26,6 @@ public class KeyFile {
             System.exit(-1);
         }*/
 
-        System.out.println("1 " + Hex.toHexString(encKeyFile.getEncKey()));
         byte[] keyBytes = KeyStoreHandler.decrypt(KeyStoreHandler.mainAlias, encKeyFile.getEncKey());
         //this.key = RSALibrary.decrypt(encKeyFile.getEncKey(), privKey);
         if (keyBytes == null) {
@@ -34,8 +33,6 @@ public class KeyFile {
         }
 
         this.key = Arrays.copyOfRange(keyBytes, keyBytes.length - AESLibrary.KEY_SIZE, keyBytes.length);
-
-        System.out.println("2 " + Hex.toHexString(this.key));
 
         //this.signature = new Signature(encKeyFile.getSignature(), privKey);
         this.signature = new Signature(encKeyFile.getSignature(), KeyStoreHandler.mainAlias);

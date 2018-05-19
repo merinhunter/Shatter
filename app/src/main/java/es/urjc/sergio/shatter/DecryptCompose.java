@@ -25,9 +25,6 @@ public class DecryptCompose {
         String badFilePath = sessionPath + FileIO.badFile;
         String errorsFilePath = sessionPath + FileIO.errorsFile;
 
-        //FileIO.makeDirectory(sessionPath);
-        //FileIO.makeDirectory(tmpPath);
-
         ArrayList<String> errors = new ArrayList<>();
         ArrayList<String> bad = new ArrayList<>();
 
@@ -49,8 +46,6 @@ public class DecryptCompose {
                 FileIO.append(badFilePath, "EncKeyFile is corrupted");
                 System.exit(-1);
             }
-
-            System.out.println(Hex.toHexString(keyFile.getKey()));
 
             Signer signer = new Signer(alias);
             if (!signer.verify(keyFile)) {

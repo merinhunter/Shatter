@@ -3,6 +3,7 @@ package es.urjc.sergio.importKey;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -11,9 +12,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
 
+import es.urjc.sergio.common.FileUtils;
 import es.urjc.sergio.keystore.KeyStoreHandler;
 import es.urjc.sergio.shatter.MainActivity;
 import es.urjc.sergio.shatter.R;
@@ -41,13 +44,17 @@ public class ImportKey extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     if (data != null) {
                         final Uri uri = data.getData();
-                        Log.i(TAG, "Uri = " + uri.getEncodedPath());
+                        Log.i(TAG, "Uri = " + uri.getPath());
                         try {
-                            final String path = uri.toString();
-                            System.out.println(uri.getScheme());
+                            final String path = FileUtils.getPath(this, uri);
 
                             EditText editText = findViewById(R.id.crtFile);
                             editText.setText(path, TextView.BufferType.EDITABLE);
+
+                            if (path != null)
+                                showMessage("File selected: " + path);
+                            else
+                                showMessage("Invalid certificate");
                         } catch (Exception e) {
                             Log.e(TAG, e.getMessage());
                         }
@@ -60,8 +67,13 @@ public class ImportKey extends AppCompatActivity {
 
     private void showChooser() {
         Intent chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
-        chooseFile.setType("*/*");
+
+        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath()
+                + File.separator + "Shatter/certs" + File.separator);
+
+        chooseFile.setDataAndType(uri, "*/*");
         chooseFile = Intent.createChooser(chooseFile, "Choose a file");
+
         startActivityForResult(chooseFile, REQUEST_CODE);
     }
 
@@ -117,5 +129,4 @@ public class ImportKey extends AppCompatActivity {
             }
         }
     }
-
 }

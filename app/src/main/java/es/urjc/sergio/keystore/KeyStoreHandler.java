@@ -1,62 +1,37 @@
 package es.urjc.sergio.keystore;
 
-import android.content.Context;
-import android.security.KeyPairGeneratorSpec;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import android.util.Base64;
 import android.util.Log;
 
-import org.spongycastle.jce.X509Principal;
 import org.spongycastle.util.encoders.Hex;
-import org.spongycastle.x509.X509V3CertificateGenerator;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.KeyStore.PrivateKeyEntry;
 import java.security.KeyStore.TrustedCertificateEntry;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
-import java.security.SignatureException;
-import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Objects;
 
 import javax.crypto.Cipher;
-import javax.security.auth.x500.X500Principal;
 
 import es.urjc.sergio.common.ExternalStorage;
 import es.urjc.sergio.common.FileIO;
-import es.urjc.sergio.rsa.RSALibrary;
 
 public class KeyStoreHandler {
-    private static final String TAG = "KeyStoreHandler";
     public static final String mainAlias = "main";
+    private static final String TAG = "KeyStoreHandler";
     //private final String password = "password";
     //private KeyStore.ProtectionParameter pwdParameter;
     //private KeyStore keyStore;
@@ -108,12 +83,14 @@ public class KeyStoreHandler {
         }
     }
 
-    public static void importCertificate(String alias, String fileName) throws IOException {
-        String filePath = FileIO.certificatesPath + fileName;
-        File certFile = ExternalStorage.getFile(filePath);
+    public static void importCertificate(String alias, String certPath) throws IOException {
+        /*String filePath = FileIO.certificatesPath + fileName;
+        File certFile = ExternalStorage.getFile(filePath);*/
+
+        File certFile = new File(certPath);
         FileInputStream input = null;
 
-        if(certFile.isFile() && certFile.getName().endsWith(".crt")) {
+        if (certFile.isFile() && certFile.getName().endsWith(".crt")) {
             input = new FileInputStream(certFile);
         }
 
@@ -338,8 +315,7 @@ public class KeyStoreHandler {
 
             Cipher cipher = getCipher();
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            System.out.println(Hex.toHexString(plaintext));
-            System.out.println(plaintext.length);
+
             return cipher.doFinal(plaintext);
 
             //return Base64.encodeToString(RSALibrary.encrypt(plaintext.getBytes(), publicKey), Base64.NO_WRAP);

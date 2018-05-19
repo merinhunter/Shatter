@@ -23,10 +23,9 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Objects;
 
 import es.urjc.sergio.common.ExternalStorage;
 import es.urjc.sergio.common.FileIO;
@@ -79,16 +78,24 @@ public class MainActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     if (data != null) {
                         final Uri uri = data.getData();
-                        Log.i(TAG, "Uri = " + uri.getEncodedPath());
+                        Log.i(TAG, "Uri = " + uri.getPath());
                         try {
                             final String path = FileUtils.getPath(this, uri);
-                            System.out.println(uri.getScheme());
+                            /*File f = new File(uri.getPath());
+                            final String path = f.getAbsolutePath();
+                            final File file = new File(Environment.getExternalStorageDirectory(), "original");
+                            Uri iru = Uri.fromFile(file);
+                            Log.i(TAG, "File Path = " + file.getAbsolutePath());
+                            Log.i(TAG, "URI Path = " + iru.getPath());
+                            Log.i(TAG, "URI File Path = " + new File(iru.getPath()).getAbsolutePath());*/
 
                             EditText editText = findViewById(R.id.sessionText);
                             editText.setText(path, TextView.BufferType.EDITABLE);
 
-                            Toast.makeText(MainActivity.this,
-                                    "File selected: " + path, Toast.LENGTH_LONG).show();
+                            if (path != null)
+                                showMessage("File selected: " + path);
+                            else
+                                showMessage("Invalid file");
                         } catch (Exception e) {
                             Log.e(TAG, e.getMessage());
                         }
@@ -191,9 +198,8 @@ public class MainActivity extends AppCompatActivity {
 
             Log.d(TAG, "Alias found: " + alias);
 
-            // TODO: Remove
-            /*if(Objects.equals(alias, KeyStoreHandler.mainAlias))
-                continue;*/
+            if (Objects.equals(alias, KeyStoreHandler.mainAlias))
+                continue;
 
             keyAliases.add(alias);
         }
@@ -246,13 +252,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void showChooser() {
         Intent chooseFile = new Intent(Intent.ACTION_GET_CONTENT);
-        Uri uri = Uri.parse(Environment.getExternalStorageDirectory().getPath()
-                + File.separator + "Shatter/certs" + File.separator);
-        chooseFile.setDataAndType(uri, "*/*");
-        //chooseFile.setType("*/*");
-        //chooseFile.addCategory(Intent.CATEGORY_OPENABLE);
+
+        chooseFile.setType("*/*");
+        chooseFile.addCategory(Intent.CATEGORY_OPENABLE);
         chooseFile = Intent.createChooser(chooseFile, "Choose a file");
+
         startActivityForResult(chooseFile, REQUEST_CODE);
+    }
+
+    private void openImportActivity() {
+        Intent intent = new Intent(this, ImportKey.class);
+        startActivity(intent);
     }
 
     private class DeleteButton implements View.OnClickListener {
@@ -337,15 +347,7 @@ public class MainActivity extends AppCompatActivity {
 
             Log.d(TAG, "Encrypt " + filePath + " with alias " + this.alias);
 
-            File file = null;
-            try {
-                file = new File(new URI(filePath));
-            } catch (URISyntaxException e) {
-                Log.e(TAG, e.getMessage());
-            }
-            System.out.println(file.exists());
-
-            //SliceEncrypt.sliceEncrypt(filePath, this.alias, 200000);
+            SliceEncrypt.sliceEncrypt(filePath, this.alias, 10);
 
             showMessage("Slice & Encrypt done");
         }
@@ -356,11 +358,6 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "Pressed selection button");
             showChooser();
         }
-    }
-
-    private void openImportActivity() {
-        Intent intent = new Intent(this, ImportKey.class);
-        startActivity(intent);
     }
 
     private class ImportButton implements View.OnClickListener {
